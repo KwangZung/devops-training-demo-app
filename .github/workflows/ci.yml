@@ -73,6 +73,7 @@ jobs:
 
       #Thêm step upload SBOM (syft)
       - name: Generate SBOM with Syft
+        if: always()
         uses: anchore/sbom-action@v0
         with:
           image: 'ghcr.io/${{ env.REPO_OWNER }}/demo-app:sha-${{ github.sha }}'
@@ -80,6 +81,7 @@ jobs:
           output-file: 'sbom.spdx.json'
 
       - name: Upload SBOM as Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sbom-report
