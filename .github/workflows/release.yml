@@ -1,0 +1,31 @@
+name: Release Application
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+# Cấp quyền ghi để hệ thống có thể đẩy tệp Docker và release bài viết
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-release-image:
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      image_name: demo-app
+      image_tag: ${{ github.ref_name }}
+
+  create-github-release:
+    needs: build-release-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate Release Note
+        uses: softprops/action-gh-release@v2
+        with:
+          # Thuộc tính này ra lệnh cho GitHub tự động tổng hợp danh sách các thay đổi mới
+          generate_release_notes: true
