@@ -21,11 +21,18 @@ jobs:
 
   test:
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+        os:   [ubuntu-22.04, ubuntu-24.04]
+        exclude:
+          - { node: 18, os: ubuntu-24.04 }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'npm' }
+        with: { node-version: '${{ matrix.node }}', cache: 'npm' }
       - run: npm ci
       - run: npm test
 
