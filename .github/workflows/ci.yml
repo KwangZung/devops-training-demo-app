@@ -38,59 +38,8 @@ jobs:
 
   build-and-push:
     needs: test
-    runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Lowercase Repository Owner
-        run: |
-          echo "REPO_OWNER=${OWNER,,}" >>${GITHUB_ENV}
-        env:
-          OWNER: '${{ github.repository_owner }}'
-
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_OWNER }}/demo-app:sha-${{ github.sha }}
-            ghcr.io/${{ env.REPO_OWNER }}/demo-app:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # Quét lỗ hổng bảo mật bằng Trivy. Fail nếu có CVE HIGH/CRITICAL
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        continue-on-error: true
-        with:
-          image-ref: 'ghcr.io/${{ env.REPO_OWNER }}/demo-app:sha-${{ github.sha }}'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-
-      #Thêm step upload SBOM (syft)
-      - name: Generate SBOM with Syft
-        if: always()
-        uses: anchore/sbom-action@v0
-        with:
-          image: 'ghcr.io/${{ env.REPO_OWNER }}/demo-app:sha-${{ github.sha }}'
-          format: 'spdx-json'
-          output-file: 'sbom.spdx.json'
-
-      - name: Upload SBOM as Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-report
-          path: sbom.spdx.json
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      image_name: demo-app
+      image_tag: sha-${{ github.sha }}
